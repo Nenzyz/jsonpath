@@ -29,6 +29,8 @@
 
 -include("jsonpath.hrl").
 
+% map_to_list(#{}) ->
+% 	#{};
 map_to_list(Map) when is_map(Map) ->
   {[ {K, map_to_list(V)} || {K,V} <- maps:to_list(Map) ]};
 map_to_list([H|_] = List) when is_list(List) and is_map(H) ->
@@ -36,11 +38,16 @@ map_to_list([H|_] = List) when is_list(List) and is_map(H) ->
 map_to_list(V) ->
   V.
 
-list_to_map({}) ->
+list_to_map({[]}) ->
 	#{};
 list_to_map(List) when is_tuple(List) ->
-	{L} = List,
-	list_to_map(L);
+	% {L} = List,
+	case List of
+		{L} -> list_to_map(L);
+		Rest -> Rest
+	end;
+% list_to_map(List) when is_tuple(List) ->
+% 	List;
 list_to_map([{_, _}=H|_] = List) when is_list(List) and is_tuple(H) ->
 	maps:from_list([ {K, list_to_map(V)} || {K, V} <- List]);
 list_to_map(List) when is_list(List) ->
@@ -56,14 +63,14 @@ search(Path, Data) ->
 	search_data(parse_path(Path), Data).
 
 replace(Path, Replace, Data) when is_map(Data) ->
-	list_to_map(replace(Path, Replace, map_to_list(Data)));
+	list_to_map(replace(Path, map_to_list(Replace), map_to_list(Data)));
 replace(Path, Replace, Data) when is_binary(Data) ->
 	replace(Path, Replace, jiffy:decode(Data));
 replace(Path, Replace, Data) ->
 	replace_data(parse_path(Path), Replace, Data).
 
 add(Path, Add, Data) when is_map(Data) ->
-	list_to_map(add(Path, Add, map_to_list(Data)));
+	list_to_map(add(Path, map_to_list(Add), map_to_list(Data)));
 add(Path, Add, Data) when is_binary(Data) ->
 	add(Path, Add, jiffy:decode(Data));
 add(Path, Add, Data) ->
